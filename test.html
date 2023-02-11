@@ -1,0 +1,26 @@
+<!DOCTYPE html> 
+<html>
+    <head>
+        <title>HTWM</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+        <!-- HTWM -->
+        <script src="./htwm.js"></script>
+        <link rel="stylesheet" href="./htwm.css"> 
+
+    </head>
+    <body>
+
+    </body>
+    <script>
+        HTWM.setContextMenuDisabled(true);
+        HTWM.createWindow({
+            uid: 0, title: "Hello World!", 
+            content: "This is some content :D",
+            resizable: true, scrollable: true, 
+            buttons: ['close', 'minimize', 'maximize', 'menu'],
+            width: 518, height: 372
+        });
+    </script>
+</html>
