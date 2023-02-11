@@ -1,16 +1,38 @@
-// TODO: Fix height in titlebar when implemented in existing HTML
+// TODO: Frame handle cursor feedback
+// TODO: Fix button css
+// TODO: Prefix "htwm-" to all elements, attributes, classes, and ids ( prevent conflicts )
+// And so on !!
+
+// This code is messy, possible rewrite ??
 
 let browser = window; // for readability, as the objects we use are called 'windows'
+
+// ############################
+
+// HTWM get function, should replace any standard js functions
+const __get = (attr, value) => document.querySelector(`[${attr}="${value}"]`); // htwm-${attr} later
+
+// get function for already existing elements
+const __getFrom = (parent, attr, value) => parent.querySelector(`[${attr}="${value}"]`);
+
+// NOTE: This will be redone, as elements will be structured as <htwm-window>, <htwm-titlebar>, as opposed to 
+// <window>, <div id="titlebar">, etc.
+
+// for getting attributes
+const __getAttr = (element, attr) => element.getAttribute(`htwm-${attr}`);
+
+// ############################
 
 // Applies standard window events to designated objects
 // (moving, resizing, and window order)
 const __recieveEvents = (reciever /* window */) => {
 
     // Move event
-    reciever.querySelector("#titlebar").addEventListener("mousedown", ({ clientX, clientY }) => {
-        // if on a button or maximized, don't move
-        if (event.target.tagName == "BUTTON") return;
-        if (reciever.getAttribute("maximized") == "true") return;
+    __getFrom(reciever, "id", "titlebar").addEventListener("mousedown", ({ clientX, clientY, target }) => {
+        // if maximized or holding a button, don't move
+        //if (reciever.getAttribute("htwm-maximized") || target.tagName == "BUTTON") return;
+        if (__getAttr(reciever, "maximized") || target.tagName == "BUTTON") return;
+        
 
         let x = clientX - reciever.offsetLeft;
         let y = clientY - reciever.offsetTop;
@@ -30,10 +52,9 @@ const __recieveEvents = (reciever /* window */) => {
     });
 
     // Resize event
-    reciever.querySelector("#frame").addEventListener("mousedown", ({ clientX, clientY }) => {
+    __getFrom(reciever, "id", "frame").addEventListener("mousedown", ({ clientX, clientY }) => {
         // if the window isn't resizable or is maximized, don't resize
-        if (reciever.getAttribute("resizable") == "false") return;
-        if (reciever.getAttribute("maximized") == "true") return;
+        if (!__getAttr(reciever, "resizable") || __getAttr(reciever, "maximized")) return;
 
         // what edge of the frame is being clicked?
         let x = clientX - reciever.offsetLeft;
@@ -71,18 +92,7 @@ const __recieveEvents = (reciever /* window */) => {
 
                 // TODO: move minimum window size to a global var
                 if (height >= 64 && clientY >= 6 && clientY <= browser.innerHeight - 6) {
-                    console.log(
-                        "is height greater than 64?", height, height >= 64,
-                    )
-                    console.log(
-                        "is clientY greater than 6?", clientY, clientY >= 6,
-                    )
-                    console.log(
-                        "is clientY less than browser.innerHeight - 6?", clientY, clientY <= browser.innerHeight - 6,
-                    )
                     Object.assign(reciever.style, winTransform);
-                } else {
-                    console.log("failed")
                 }
             }
             
@@ -135,12 +145,28 @@ const __recieveEvents = (reciever /* window */) => {
     });
 }
 
+
+let defaultWindowOptions = { // mfw no typescript
+    uid: null,
+    title: "Untitled",
+    content: "",
+    resizable: true,
+    scrollable: true,
+    buttons: ["close"],
+    width: 300, height: 200
+}
+
 // Creates a new window
-// TODO: use object-based args instead of positional
-const __createWindow = (uid, title, content, resizable = true, scrollable = true, buttons = ["close"], width = 300, height = 200) => {
+const __createWindow = (options) => {
+    // override default options
+    options = Object.assign(defaultWindowOptions, options);
+    let { uid, title, content, resizable, scrollable, buttons, width, height } = options;
+
+    // TODO: Prevent windows from being created with the same uid, or invalid values
+    
     let win = document.createElement("window");
-    win.setAttribute("uid", uid);
-    win.setAttribute("resizable", resizable);
+    win.setAttribute("htwm-uid", uid);
+    win.setAttribute("htwm-resizable", resizable);
 
     console.log("creating buttons", buttons);
 
@@ -148,20 +174,17 @@ const __createWindow = (uid, title, content, resizable = true, scrollable = true
         <hbox id="titlebar">
             <label id="title">${title}</label>
             <hbox id="titlebar-buttonarea">
-                ${buttons.includes("menu") ? `<button btn-type="menu" onclick="HTWM.openMenu('${uid}')">☰</button>` : ""}
-                ${buttons.includes("minimize") ? `<button btn-type="minimize" onclick="HTWM.minimizeWindow('${uid}')">_</button>` : ""}
-                ${buttons.includes("maximize") ? `<button btn-type="maximize" onclick="HTWM.maximizeWindow('${uid}')">[]</button>` : ""}
-                ${buttons.includes("close") ? `<button btn-type="close" onclick="HTWM.closeWindow('${uid}')">X</button>` : ""}
+                ${buttons.includes("menu") ? `<button htwm-btn-type="menu" onclick="HTWM.openMenu('${uid}')"></button>` : ""}
+                ${buttons.includes("minimize") ? `<button htwm-btn-type="minimize" onclick="HTWM.minimizeWindow('${uid}')"></button>` : ""}
+                ${buttons.includes("maximize") ? `<button htwm-btn-type="maximize" onclick="HTWM.maximizeWindow('${uid}')"></button>` : ""}
+                ${buttons.includes("close") ? `<button htwm-btn-type="close" onclick="HTWM.closeWindow('${uid}')"></button>` : ""}
             </hbox>
         </hbox>
-        <div id="content" ${scrollable ? "scrollable" : ""}>
+        <div id="content" ${scrollable ? "htwm-scrollable" : ""}>
             ${content}
         </div>
         <div id="frame"></div>
     `;
-
-    // Button actions are no longer defined here, but in global scope
-    // TODO: move button actions to a global scope
 
     // set window size
     win.style.width = width + "px";
@@ -172,12 +195,14 @@ const __createWindow = (uid, title, content, resizable = true, scrollable = true
 
     // subscribe to window events
     __recieveEvents(win);
-    return win;
+
+    console.log("window created");
+
 }
 
 // Deletes a window
 const __destroyWindow = (uid) => {
-    let win = document.querySelector(`window[uid="${uid}"]`);
+    let win = document.querySelector(`window[htwm-uid="${uid}"]`);
     if (win) win.remove();
 }
 
@@ -191,24 +216,36 @@ const __subscribeWindows = () => {
 
 // ###############################
 
-// TODO: Maximize and restore window
+// TODO: Maximize, raise, and restore window
 
 // Minimize window
 const __minimizeWindow = (uid) => {
-    let win = document.querySelector(`window[uid="${uid}"]`);
+    let win = document.querySelector(`window[htwm-uid="${uid}"]`);
     if (!win) return;
 
-    win.setAttribute("minimized", true);
-    win.style.display = "none";
+    win.setAttribute("htwm-minimized", true);
 
-    // TODO: Shade the window instead of hiding it 
-    // (this will require a new attribute)
+    __getFrom(win, "id", "frame").style.display = 'none';
+    __getFrom(win, "id", "content").style.display = 'none';
 
-    // TODO: Add taskbar consideration (if enabled)     
+    // TODO: If there's a taskbar present, we'll give this 
+    // function different behavior
 }
 
 // TODO: Give windows a menu item, and add right-click to titlebar
 // and taskbar objects (<menu> ... </menu>)
+
+// ###############################
+
+// Settings
+
+// Disables the context menu, necessary for some HTWM functions
+__setContextMenuDisabled = (value) => {
+    if (value) window.oncontextmenu = () => false;
+}
+
+// TODO: Use this var when handling right click events
+let __contextMenuDisabled = false;
 
 // ###############################
 
@@ -218,26 +255,12 @@ const HTWM = {
     createWindow: __createWindow,
     closeWindow: __destroyWindow,
     maximizeWindow: null /* TODO: implement */,
-    minimizeWindow: null /* TODO: implement */,
+    minimizeWindow: __minimizeWindow,
     openMenu: null /* TODO: implement */,
-    subscribeWindows: __subscribeWindows
+    subscribeWindows: __subscribeWindows,
+
+    contextMenuDisabled: __contextMenuDisabled,
+    setContextMenuDisabled: __setContextMenuDisabled,
 }
 
 // ###############################
-
-/*window.onload = () => {
-    // subscribe to all existing windows
-    HTWM.subscribeWindows();
-
-    HTWM.createWindow(0, "Hello World!", "This is a window!", true, true, ['close', 'minimize', 'maximize'], 300, 200);
-
-    HTWM.createWindow(1, "Hello World!", 
-        `
-        <vbox>
-            <img src="jhu.gif" style="height: 340px; width: 512px;">
-        </vbox>
-        `            
-        , false, true,  ['close', 'minimize', 'maximize', 'menu'], 518, 372);
-}*/
-
-

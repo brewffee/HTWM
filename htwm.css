@@ -12,10 +12,8 @@ window > * {
 window {
     display: block;
     position: absolute;
-    top: 6px; left: 6px;
-    height: 256px; width: 256px; /* default */
-    
-    background: #ccc; /* default background color */
+    top: 6px; left: 6px; 
+    height: 256px; width: 256px;
 }
 
 window > #frame {
@@ -25,7 +23,7 @@ window > #frame {
     width: calc(100% - 6px);
     z-index: 1;
     
-    background: none;
+    background: #bdbdbd;
     border: 6px solid #bdbdbd;
 }
 
@@ -37,7 +35,7 @@ window > #titlebar {
     width: calc(100% - 12px);
     z-index: 3;
 
-    background: #f1f1f1;      
+    background: linear-gradient(to top, white, gray);
     border-bottom: 6px solid #bdbdbd;
 }
 
@@ -45,6 +43,7 @@ window > #titlebar > #title {
     line-height: 22px;
     z-index: 4;
     font-family: "AcPlus IBM VGA 8x14";
+    color: #000;
 }
 
 window > #titlebar > #titlebar-buttonarea {
@@ -62,7 +61,6 @@ window > #titlebar > #titlebar-buttonarea > button {
     width: 22px;
     height: 22px;
     text-align: center;
-    background: #f1f1f1;
     color: #000;
     cursor: pointer;
     margin: 0;
@@ -84,10 +82,26 @@ window > #content {
     z-index: 2;
 
     background-color: rgb(255, 255, 255);
+    color: #000;
     height: calc(100% - 33px);
     width: calc(100% - 6px);
     overflow: hidden;
 }
+
+[htwm-minimized] > #titlebar { border: 6px solid #bdbdbd; }
+
+/* Button Types */
+window > #titlebar > #titlebar-buttonarea > button { 
+    background-color: #f1f1f1;
+    background-repeat: no-repeat;
+    background-size: 20px;
+}
+
+[htwm-btn-type="close"] { background-image: url("./htwm-graphics/x.png"); }
+[htwm-btn-type="maximize"] { background-image: url("./htwm-graphics/o.png"); }
+[htwm-btn-type="minimize"] { background-image: url("./htwm-graphics/i.png"); }
+[htwm-btn-type="menu"] { background-image: url("./htwm-graphics/m.png"); }
+
 
 #content[scrollable] { overflow: scroll; }
 #content[scrollY] { overflow-y: scroll; }
